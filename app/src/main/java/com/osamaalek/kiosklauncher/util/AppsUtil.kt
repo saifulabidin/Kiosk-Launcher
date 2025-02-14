@@ -1,6 +1,5 @@
 package com.osamaalek.kiosklauncher.util
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,14 +14,12 @@ class AppsUtil {
             val i = Intent(Intent.ACTION_MAIN, null)
             i.addCategory(Intent.CATEGORY_LAUNCHER)
 
-            // Obter apps selecionados das preferências
             val prefs = context.getSharedPreferences("kiosk_prefs", Context.MODE_PRIVATE)
             val selectedApps = prefs.getStringSet("selected_apps", null)
 
             val allApps = packageManager.queryIntentActivities(i, 0)
             for (ri in allApps) {
                 val packageName = ri.activityInfo.packageName
-                // Filtrar apps se necessário
                 if (!onlySelected || selectedApps == null || selectedApps.contains(packageName)) {
                     val app = AppInfo(
                         ri.loadLabel(packageManager),

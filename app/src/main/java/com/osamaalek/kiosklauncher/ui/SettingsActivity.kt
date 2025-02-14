@@ -1,17 +1,17 @@
 package com.osamaalek.kiosklauncher.ui
 
-import android.content.SharedPreferences // Add this import
-import android.os.Bundle // Add this import
+import android.content.SharedPreferences
+import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
-import android.widget.Button // Add this import
-import android.widget.EditText // Add this import
-import androidx.appcompat.app.AppCompatActivity // Add this import
-import androidx.recyclerview.widget.GridLayoutManager // Add this import
-import androidx.recyclerview.widget.RecyclerView // Add this import
+import android.widget.Button
+import android.widget.EditText
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.osamaalek.kiosklauncher.R
-import com.osamaalek.kiosklauncher.util.AppsUtil // Ensure this exists
-import com.osamaalek.kiosklauncher.adapter.SettingsAppsAdapter // Ensure this exists
+import com.osamaalek.kiosklauncher.util.AppsUtil
+import com.osamaalek.kiosklauncher.adapter.SettingsAppsAdapter
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -45,14 +45,29 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadApps() {
         recyclerView.layoutManager = GridLayoutManager(this, 4)
         val apps = AppsUtil.getAllApps(this)
-        recyclerView.adapter = SettingsAppsAdapter(apps, this)
+
+        val selectedApps = sharedPreferences.getStringSet("selected_apps", emptySet())?.toMutableSet() ?: mutableSetOf()
+        recyclerView.adapter = SettingsAppsAdapter(apps, this, selectedApps)
+
     }
+
 
     private fun saveSettings() {
         val pin = pinEditText.text.toString()
         if (pin.isNotEmpty()) {
             sharedPreferences.edit().putString("kiosk_pin", pin).apply()
         }
+
+        val adapter = recyclerView.adapter as SettingsAppsAdapter
+        adapter.saveSelectedApps()
+
+        setResult(RESULT_OK)
         finish()
     }
+
+    private fun getSelectedApps(): Set<String> {
+        val adapter = recyclerView.adapter as SettingsAppsAdapter
+        return adapter.getSelectedApps()
+    }
+
 }
