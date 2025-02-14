@@ -5,11 +5,13 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import com.osamaalek.kiosklauncher.ui.MainActivity
-import android.os.Looper
 
 class BlockAppsService : Service() {
     private val handler = Handler(Looper.getMainLooper())
@@ -26,19 +28,20 @@ class BlockAppsService : Service() {
     private val checkForegroundApp = object : Runnable {
         override fun run() {
             val allowedApps = sharedPreferences.getStringSet("selected_apps", emptySet())?.toMutableSet() ?: mutableSetOf()
-
-            allowedApps.add(kioskPackageName)
+            allowedApps.add(kioskPackageName) // Mantém o launcher sempre permitido
 
             val foregroundApp = getForegroundApp()
 
-            if (foregroundApp != null && !allowedApps.contains(foregroundApp)) {
-                Log.d("BlockAppsService", "App não permitido detectado: $foregroundApp")
+            if (foregroundApp != null) {
+                if (!allowedApps.contains(foregroundApp) && !isSystemApp(foregroundApp)) {
+                    Log.d("BlockAppsService", "App não permitido detectado: $foregroundApp. Redirecionando...")
 
-                val intent = Intent(applicationContext, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                startActivity(intent)
-            } else {
-                Log.d("BlockAppsService", "App permitido: $foregroundApp")
+                    val intent = Intent(applicationContext, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    startActivity(intent)
+                } else {
+                    Log.d("BlockAppsService", "App permitido: $foregroundApp")
+                }
             }
 
             handler.postDelayed(this, checkInterval)
@@ -59,6 +62,16 @@ class BlockAppsService : Service() {
             return recentApp?.packageName
         }
         return null
+    }
+
+    private fun isSystemApp(packageName: String): Boolean {
+        return try {
+            val packageManager = packageManager
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? {
