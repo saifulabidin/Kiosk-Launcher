@@ -126,9 +126,15 @@ class MainActivity : AppCompatActivity() {
     private fun hasUsageStatsPermission(context: Context): Boolean {
         val appOpsManager = context.getSystemService(AppOpsManager::class.java)
         val uid = context.applicationInfo.uid
-        val mode = appOpsManager.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, uid, context.packageName)
-
-        return mode == AppOpsManager.MODE_ALLOWED
+        
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val mode = appOpsManager.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, uid, context.packageName)
+            mode == AppOpsManager.MODE_ALLOWED
+        } else {
+            @Suppress("DEPRECATION")
+            val mode = appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, uid, context.packageName)
+            mode == AppOpsManager.MODE_ALLOWED
+        }
     }
 
 }
